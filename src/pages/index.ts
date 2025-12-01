@@ -1,0 +1,9 @@
+export { default as Home } from './Home';
+export { default as Learn } from './Learn';
+export { default as Mission } from './Mission';
+export { default as VibeCoding } from './VibeCoding';
+export { default as Games } from './Games';
+export { default as Profile } from './Profile';
+export { default as Settings } from './Settings';
+export { default as Achievements } from './Achievements';
+export { default as AITutor } from './AITutor';

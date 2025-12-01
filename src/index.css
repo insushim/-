@@ -1,0 +1,302 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 248 250 252;
+    --foreground: 15 23 42;
+    --primary: 99 102 241;
+    --primary-foreground: 255 255 255;
+    --secondary: 168 85 247;
+    --muted: 100 116 139;
+    --accent: 34 197 94;
+    --destructive: 239 68 68;
+    --warning: 245 158 11;
+    --border: 226 232 240;
+    --ring: 99 102 241;
+  }
+
+  .dark {
+    --background: 15 23 42;
+    --foreground: 241 245 249;
+    --primary: 129 140 248;
+    --primary-foreground: 15 23 42;
+    --secondary: 192 132 252;
+    --muted: 148 163 184;
+    --accent: 52 211 153;
+    --destructive: 248 113 113;
+    --warning: 251 191 36;
+    --border: 51 65 85;
+    --ring: 129 140 248;
+  }
+
+  * {
+    border-color: rgb(var(--border) / 1);
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 dark:bg-dark-bg dark:text-dark-text;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-500;
+  }
+
+  .btn-secondary {
+    @apply btn bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-dark-surface dark:text-dark-text dark:hover:bg-dark-surfaceHover focus:ring-slate-500;
+  }
+
+  .btn-success {
+    @apply btn bg-green-500 text-white hover:bg-green-600 focus:ring-green-500;
+  }
+
+  .btn-danger {
+    @apply btn bg-red-500 text-white hover:bg-red-600 focus:ring-red-500;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent hover:bg-slate-100 dark:hover:bg-dark-surface;
+  }
+
+  .card {
+    @apply bg-white dark:bg-dark-surface rounded-xl border border-slate-200 dark:border-dark-border shadow-sm;
+  }
+
+  .card-hover {
+    @apply card transition-all duration-200 hover:shadow-md hover:-translate-y-1;
+  }
+
+  .input {
+    @apply w-full rounded-lg border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-surface px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-primary {
+    @apply badge bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300;
+  }
+
+  .badge-success {
+    @apply badge bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300;
+  }
+
+  .badge-warning {
+    @apply badge bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300;
+  }
+
+  .badge-danger {
+    @apply badge bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300;
+  }
+
+  .progress-bar {
+    @apply h-2 bg-slate-200 dark:bg-dark-border rounded-full overflow-hidden;
+  }
+
+  .progress-bar-fill {
+    @apply h-full bg-gradient-to-r from-primary-500 to-secondary-500 transition-all duration-500 ease-out;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-500 bg-clip-text text-transparent;
+  }
+
+  .glow-box {
+    @apply relative before:absolute before:inset-0 before:rounded-xl before:bg-gradient-to-r before:from-primary-500 before:to-secondary-500 before:opacity-20 before:blur-xl before:-z-10;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(148 163 184) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgb(148 163 184);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(100 116 139);
+  }
+
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .animation-delay-100 {
+    animation-delay: 100ms;
+  }
+
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+
+  .animation-delay-300 {
+    animation-delay: 300ms;
+  }
+}
+
+/* Code Editor Styles */
+.monaco-editor {
+  border-radius: 0.5rem;
+}
+
+/* Custom Scrollbar for dark mode */
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgb(71 85 105);
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(100 116 139);
+}
+
+/* Animations */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bounce-subtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.4s ease-out forwards;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.4s ease-out forwards;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 2s ease-in-out infinite;
+}
+
+/* Tooltip styles */
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.5rem 0.75rem;
+  background: rgb(15 23 42);
+  color: white;
+  font-size: 0.75rem;
+  border-radius: 0.375rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 50;
+}
+
+[data-tooltip]:hover::after {
+  opacity: 1;
+}
+
+/* Loading spinner */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(99, 102, 241, 0.3);
+  border-radius: 50%;
+  border-top-color: rgb(99, 102, 241);
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Glass effect */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(51, 65, 85, 0.5);
+}
