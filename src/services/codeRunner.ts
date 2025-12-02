@@ -1,59 +1,111 @@
 import type { CodeExecutionResult, TestCase } from '../types';
 
+// Pyodide 인스턴스 캐싱
+let pyodideInstance: any = null;
+let pyodideLoading: Promise<any> | null = null;
+
+// Pyodide 초기화
+const initPyodide = async (): Promise<any> => {
+  if (pyodideInstance) {
+    return pyodideInstance;
+  }
+
+  if (pyodideLoading) {
+    return pyodideLoading;
+  }
+
+  if (typeof window !== 'undefined' && (window as any).loadPyodide) {
+    pyodideLoading = (window as any).loadPyodide({
+      indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/',
+    }).then((pyodide: any) => {
+      pyodideInstance = pyodide;
+      pyodideLoading = null;
+      return pyodide;
+    });
+    return pyodideLoading;
+  }
+
+  return null;
+};
+
 // Python 코드 실행 (Pyodide 또는 시뮬레이션)
 export const runPython = async (code: string, input?: string): Promise<CodeExecutionResult> => {
   const startTime = performance.now();
 
   try {
     // Pyodide 로드 시도
-    if (typeof window !== 'undefined' && (window as any).loadPyodide) {
-      const pyodide = await (window as any).loadPyodide();
+    const pyodide = await initPyodide();
 
+    if (pyodide) {
       // input 시뮬레이션
       if (input) {
         const inputs = input.split('\n');
-        let inputIndex = 0;
-        pyodide.globals.set('__inputs__', inputs);
+        pyodide.globals.set('__inputs__', pyodide.toPy(inputs));
         await pyodide.runPythonAsync(`
-          __input_index__ = 0
-          def input(prompt=''):
-              global __input_index__
-              if __input_index__ < len(__inputs__):
-                  result = __inputs__[__input_index__]
-                  __input_index__ += 1
-                  return result
-              return ''
+__input_index__ = 0
+__inputs__ = list(__inputs__)
+def input(prompt=''):
+    global __input_index__
+    if __input_index__ < len(__inputs__):
+        result = __inputs__[__input_index__]
+        __input_index__ += 1
+        return result
+    return ''
         `);
       }
 
-      // stdout 캡처
+      // stdout/stderr 캡처
       await pyodide.runPythonAsync(`
-        import sys
-        from io import StringIO
-        __stdout__ = sys.stdout
-        sys.stdout = StringIO()
+import sys
+from io import StringIO
+__stdout__ = sys.stdout
+__stderr__ = sys.stderr
+sys.stdout = StringIO()
+sys.stderr = StringIO()
       `);
 
-      // 코드 실행
-      await pyodide.runPythonAsync(code);
+      try {
+        // 코드 실행
+        await pyodide.runPythonAsync(code);
 
-      // 출력 가져오기
-      const output = await pyodide.runPythonAsync(`
-        sys.stdout.getvalue()
-      `);
+        // 출력 가져오기
+        const output = await pyodide.runPythonAsync(`
+sys.stdout.getvalue()
+        `);
 
-      // stdout 복원
-      await pyodide.runPythonAsync(`
-        sys.stdout = __stdout__
-      `);
+        // stdout 복원
+        await pyodide.runPythonAsync(`
+sys.stdout = __stdout__
+sys.stderr = __stderr__
+        `);
 
-      const executionTime = performance.now() - startTime;
+        const executionTime = performance.now() - startTime;
 
-      return {
-        success: true,
-        output: output.trim(),
-        executionTime,
-      };
+        return {
+          success: true,
+          output: output.trim(),
+          executionTime,
+        };
+      } catch (execError) {
+        // 에러 발생 시 stderr 가져오기
+        const errorOutput = await pyodide.runPythonAsync(`
+sys.stderr.getvalue()
+        `);
+
+        // stdout 복원
+        await pyodide.runPythonAsync(`
+sys.stdout = __stdout__
+sys.stderr = __stderr__
+        `);
+
+        const executionTime = performance.now() - startTime;
+        return {
+          success: false,
+          output: errorOutput || '',
+          error: execError instanceof Error ? execError.message : String(execError),
+          executionTime,
+        };
+      }
     }
 
     // Pyodide 없으면 간단한 시뮬레이션
@@ -75,38 +127,136 @@ const simulatePython = (code: string, input?: string): CodeExecutionResult => {
   const inputs = input?.split('\n') || [];
   let inputIndex = 0;
 
-  // print 문 추출
-  const printRegex = /print\s*\(\s*(['"`])(.*?)\1\s*\)/g;
-  const printFStringRegex = /print\s*\(\s*f(['"`])(.*?)\1\s*\)/g;
-  const printExprRegex = /print\s*\(\s*([^'"`)]+)\s*\)/g;
+  // 변수 저장소
+  const variables: Record<string, any> = {};
 
-  let match;
+  // 코드를 줄 단위로 분석
+  const lines = code.split('\n');
 
-  // 간단한 print 문
-  while ((match = printRegex.exec(code)) !== null) {
-    outputs.push(match[2]);
-  }
+  for (const line of lines) {
+    const trimmedLine = line.trim();
 
-  // f-string (간단한 경우만)
-  while ((match = printFStringRegex.exec(code)) !== null) {
-    let fstring = match[2];
-    // {변수} 패턴을 [변수값]으로 대체 (실제로는 변수 추적 필요)
-    outputs.push(fstring.replace(/\{([^}]+)\}/g, '[$1]'));
-  }
+    // 빈 줄이나 주석은 건너뛰기
+    if (!trimmedLine || trimmedLine.startsWith('#')) {
+      continue;
+    }
 
-  // 숫자 계산
-  while ((match = printExprRegex.exec(code)) !== null) {
-    const expr = match[1].trim();
-    try {
-      // 안전한 수식만 평가
-      if (/^[\d\s+\-*/%().]+$/.test(expr)) {
-        const result = eval(expr);
-        if (!outputs.includes(String(result))) {
-          outputs.push(String(result));
+    // 변수 할당 처리: x = 값
+    const assignMatch = trimmedLine.match(/^(\w+)\s*=\s*(.+)$/);
+    if (assignMatch) {
+      const [, varName, value] = assignMatch;
+      try {
+        // 문자열 값
+        if ((value.startsWith("'") && value.endsWith("'")) ||
+            (value.startsWith('"') && value.endsWith('"'))) {
+          variables[varName] = value.slice(1, -1);
+        }
+        // 숫자 값
+        else if (/^[\d.]+$/.test(value.trim())) {
+          variables[varName] = parseFloat(value);
+        }
+        // 수식 계산
+        else if (/^[\d\s+\-*/%().]+$/.test(value)) {
+          variables[varName] = eval(value);
+        }
+        // 변수 참조
+        else if (variables[value.trim()] !== undefined) {
+          variables[varName] = variables[value.trim()];
+        }
+        // input() 함수
+        else if (value.includes('input(')) {
+          variables[varName] = inputs[inputIndex++] || '';
+        }
+        // int() 변환
+        else if (value.startsWith('int(')) {
+          const innerMatch = value.match(/int\(\s*(\w+)\s*\)/);
+          if (innerMatch && variables[innerMatch[1]] !== undefined) {
+            variables[varName] = parseInt(variables[innerMatch[1]]);
+          }
+        }
+      } catch {
+        // 파싱 실패시 무시
+      }
+      continue;
+    }
+
+    // print 문 처리
+    const printMatch = trimmedLine.match(/^print\s*\((.*)\)$/);
+    if (printMatch) {
+      const content = printMatch[1].trim();
+
+      // 빈 print()
+      if (!content) {
+        outputs.push('');
+        continue;
+      }
+
+      // 문자열 리터럴
+      if ((content.startsWith("'") && content.endsWith("'")) ||
+          (content.startsWith('"') && content.endsWith('"'))) {
+        outputs.push(content.slice(1, -1));
+        continue;
+      }
+
+      // f-string
+      if (content.startsWith("f'") || content.startsWith('f"')) {
+        let fstring = content.slice(2, -1);
+        fstring = fstring.replace(/\{([^}]+)\}/g, (_, varName) => {
+          const v = varName.trim();
+          return variables[v] !== undefined ? String(variables[v]) : `{${v}}`;
+        });
+        outputs.push(fstring);
+        continue;
+      }
+
+      // 변수 참조
+      if (variables[content] !== undefined) {
+        outputs.push(String(variables[content]));
+        continue;
+      }
+
+      // 숫자 계산
+      if (/^[\d\s+\-*/%().]+$/.test(content)) {
+        try {
+          outputs.push(String(eval(content)));
+        } catch {
+          outputs.push(content);
+        }
+        continue;
+      }
+
+      // 변수가 포함된 계산
+      let evalExpr = content;
+      for (const [varName, varValue] of Object.entries(variables)) {
+        evalExpr = evalExpr.replace(new RegExp(`\\b${varName}\\b`, 'g'), String(varValue));
+      }
+      if (/^[\d\s+\-*/%().]+$/.test(evalExpr)) {
+        try {
+          outputs.push(String(eval(evalExpr)));
+          continue;
+        } catch {
+          // 계산 실패
         }
       }
-    } catch {
-      // 평가 실패시 무시
+
+      // 여러 인자가 있는 경우 (쉼표로 구분)
+      if (content.includes(',')) {
+        const parts = content.split(',').map(p => {
+          const pt = p.trim();
+          if ((pt.startsWith("'") && pt.endsWith("'")) ||
+              (pt.startsWith('"') && pt.endsWith('"'))) {
+            return pt.slice(1, -1);
+          }
+          if (variables[pt] !== undefined) {
+            return String(variables[pt]);
+          }
+          return pt;
+        });
+        outputs.push(parts.join(' '));
+        continue;
+      }
+
+      outputs.push(content);
     }
   }
 

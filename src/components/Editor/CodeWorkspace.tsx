@@ -45,9 +45,12 @@ const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({ mission, onComplete }) =>
         setTestPassed(passed);
 
         if (passed) {
-          onComplete(hintsUsed === 0);
+          // 성공 시 잠시 결과를 보여준 후 완료 처리
+          setTimeout(() => {
+            onComplete(hintsUsed === 0);
+          }, 1500);
         }
-      } else if (result.success) {
+      } else if (result.success && result.output && result.output !== '(실행 완료 - 출력 없음)') {
         setTestPassed(true);
       }
 
@@ -238,48 +241,65 @@ const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({ mission, onComplete }) =>
           </div>
 
           {/* Terminal Window */}
-          <div className="h-40 bg-[#1e1e1e] rounded-2xl border border-slate-700/50 p-4 font-mono text-sm overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between mb-2">
+          <div className={`h-48 bg-[#1e1e1e] rounded-2xl border ${testPassed ? 'border-emerald-500/50 shadow-lg shadow-emerald-500/20' : testPassed === false ? 'border-red-500/50' : 'border-slate-700/50'} p-4 font-mono text-sm overflow-hidden flex flex-col transition-all duration-300`}>
+            <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                <Terminal className="w-3.5 h-3.5" /> Console
+                <Terminal className="w-3.5 h-3.5" /> 실행 결과
               </span>
               <div className="flex items-center gap-2">
                 {testPassed !== null && (
-                  <span className={`flex items-center gap-1 text-xs font-bold ${testPassed ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <motion.span
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full ${testPassed ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}
+                  >
                     {testPassed ? (
                       <>
-                        <CheckCircle2 className="w-3.5 h-3.5" /> 성공!
+                        <CheckCircle2 className="w-4 h-4" /> 정답입니다!
                       </>
                     ) : (
                       <>
-                        <XCircle className="w-3.5 h-3.5" /> 다시 시도
+                        <XCircle className="w-4 h-4" /> 다시 시도해보세요
                       </>
                     )}
-                  </span>
+                  </motion.span>
                 )}
                 <div className="flex gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-slate-600"></div>
+                  <div className={`w-2.5 h-2.5 rounded-full ${isRunning ? 'bg-yellow-500 animate-pulse' : testPassed ? 'bg-emerald-500' : 'bg-slate-600'}`}></div>
                   <div className="w-2.5 h-2.5 rounded-full bg-slate-600"></div>
                 </div>
               </div>
             </div>
-            <div className="flex-1 text-slate-300 font-light overflow-auto custom-scrollbar">
+            <div className="flex-1 text-slate-300 overflow-auto custom-scrollbar">
               {isRunning ? (
-                <div className="flex items-center gap-2 text-slate-400">
+                <div className="flex items-center gap-2 text-yellow-400">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  실행 중...
+                  Python 코드 실행 중...
                 </div>
               ) : output ? (
-                <>
-                  <span className="text-emerald-500">➜</span> <span className="text-cyan-400">~</span> {language === 'python' ? 'python' : 'node'} main.{language === 'python' ? 'py' : 'js'}<br />
-                  <pre className="whitespace-pre-wrap mt-1">{output}</pre>
-                  <br />
-                  <span className="text-slate-500">Program exited with code {testPassed === false ? 1 : 0}</span>
-                </>
+                <div>
+                  <div className="flex items-center gap-2 text-slate-500 mb-2">
+                    <span className="text-emerald-500">➜</span>
+                    <span className="text-cyan-400">~</span>
+                    <span>{language === 'python' ? 'python' : 'node'} main.{language === 'python' ? 'py' : 'js'}</span>
+                  </div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`p-3 rounded-lg ${testPassed ? 'bg-emerald-500/10 border border-emerald-500/30' : testPassed === false ? 'bg-red-500/10 border border-red-500/30' : 'bg-slate-800/50'}`}
+                  >
+                    <pre className={`whitespace-pre-wrap font-mono text-base ${testPassed ? 'text-emerald-300' : testPassed === false ? 'text-red-300' : 'text-slate-200'}`}>{output}</pre>
+                  </motion.div>
+                  <div className="mt-2 flex items-center gap-2 text-xs">
+                    <span className="text-slate-500">Program exited with code</span>
+                    <span className={testPassed === false ? 'text-red-400' : 'text-emerald-400'}>{testPassed === false ? 1 : 0}</span>
+                  </div>
+                </div>
               ) : (
-                <span className="text-slate-500">
-                  <span className="text-emerald-500">➜</span> <span className="text-cyan-400">~</span> 코드를 실행하면 결과가 여기에 표시됩니다
-                </span>
+                <div className="flex flex-col items-center justify-center h-full text-slate-500">
+                  <Play className="w-8 h-8 mb-2 opacity-50" />
+                  <span className="text-sm">코드를 실행하면 결과가 여기에 표시됩니다</span>
+                </div>
               )}
             </div>
           </div>
