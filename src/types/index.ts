@@ -1,3 +1,57 @@
+// Auth & Role Types
+export type UserRole = 'student' | 'teacher' | 'admin';
+export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
+
+export interface AuthUser {
+  uid: string;
+  email: string;
+  role: UserRole;
+  displayName: string;
+  photoURL?: string;
+  createdAt: string;
+  approvalStatus: ApprovalStatus;
+  approvedBy?: string;
+  approvedAt?: string;
+  classId?: string; // 학생: 소속 학급, 선생님: 관리 학급
+}
+
+export interface Teacher extends AuthUser {
+  role: 'teacher';
+  school?: string;
+  subject?: string;
+  classIds: string[]; // 관리하는 학급들
+}
+
+export interface Student extends AuthUser {
+  role: 'student';
+  teacherId: string;
+  classId: string;
+}
+
+export interface ClassRoom {
+  id: string;
+  name: string;
+  teacherId: string;
+  teacherName: string;
+  joinCode: string; // 6자리 학급 코드
+  studentIds: string[];
+  createdAt: string;
+  isActive: boolean;
+}
+
+export interface StudentProgress {
+  studentId: string;
+  studentName: string;
+  studentAvatar: string;
+  level: number;
+  totalExp: number;
+  completedMissions: number;
+  totalMissions: number;
+  streak: number;
+  lastActiveDate: string;
+  weeklyProgress: number; // 이번 주 완료 미션
+}
+
 // User Types
 export interface User {
   id: string;
@@ -13,6 +67,11 @@ export interface User {
   createdAt: string;
   settings: UserSettings;
   stats: UserStats;
+  // Auth 연동
+  authUid?: string;
+  role?: UserRole;
+  classId?: string;
+  teacherId?: string;
 }
 
 export interface UserSettings {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gamepad2, Trophy, Timer, Zap, RotateCcw, Play, Target, Brain, Bug, Keyboard } from 'lucide-react';
+import { Gamepad2, Trophy, Timer, Zap, RotateCcw, Play, Target, Brain, Bug, Keyboard, Sparkles, Star } from 'lucide-react';
 import { Card, Button, Modal } from '../components/Common';
 import { useUserStore } from '../stores/userStore';
 import { useProgressStore } from '../stores/progressStore';
@@ -13,6 +13,8 @@ interface Game {
   description: string;
   icon: React.ReactNode;
   color: string;
+  bgGlow: string;
+  emoji: string;
 }
 
 const games: Game[] = [
@@ -20,29 +22,37 @@ const games: Game[] = [
     id: 'code-racer',
     name: '코드 레이서',
     description: '코드를 빠르게 타이핑하세요!',
-    icon: <Keyboard className="w-8 h-8" />,
-    color: 'from-blue-500 to-cyan-500',
+    icon: <Keyboard className="w-10 h-10" />,
+    color: 'from-blue-500 via-cyan-500 to-teal-400',
+    bgGlow: 'bg-cyan-500/20',
+    emoji: '⚡',
   },
   {
     id: 'bug-hunter',
     name: '버그 헌터',
     description: '코드의 버그를 찾아내세요!',
-    icon: <Bug className="w-8 h-8" />,
-    color: 'from-red-500 to-orange-500',
+    icon: <Bug className="w-10 h-10" />,
+    color: 'from-red-500 via-orange-500 to-amber-400',
+    bgGlow: 'bg-orange-500/20',
+    emoji: '🐛',
   },
   {
     id: 'memory',
     name: '코딩 메모리',
     description: '코드 조각을 맞춰보세요!',
-    icon: <Brain className="w-8 h-8" />,
-    color: 'from-purple-500 to-pink-500',
+    icon: <Brain className="w-10 h-10" />,
+    color: 'from-purple-500 via-pink-500 to-rose-400',
+    bgGlow: 'bg-pink-500/20',
+    emoji: '🧠',
   },
   {
     id: 'quiz-battle',
     name: '퀴즈 배틀',
     description: '코딩 퀴즈에 도전하세요!',
-    icon: <Target className="w-8 h-8" />,
-    color: 'from-green-500 to-emerald-500',
+    icon: <Target className="w-10 h-10" />,
+    color: 'from-green-500 via-emerald-500 to-teal-400',
+    bgGlow: 'bg-emerald-500/20',
+    emoji: '🎯',
   },
 ];
 
@@ -52,52 +62,122 @@ const Games: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="text-center mb-8">
+      {/* Header with 3D effect */}
+      <div className="text-center mb-10">
         <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl mb-4"
+          initial={{ scale: 0, rotateY: -180 }}
+          animate={{ scale: 1, rotateY: 0 }}
+          transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+          className="relative inline-block mb-6"
         >
-          <Gamepad2 className="w-8 h-8 text-white" />
+          {/* Glow effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 rounded-3xl blur-xl opacity-50 animate-pulse" />
+          <div className="relative w-20 h-20 bg-gradient-to-br from-green-400 via-emerald-500 to-teal-500 rounded-3xl flex items-center justify-center shadow-2xl shadow-emerald-500/30 border border-emerald-400/30">
+            <Gamepad2 className="w-10 h-10 text-white drop-shadow-lg" />
+            {/* Shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/20 to-white/30 rounded-3xl pointer-events-none" />
+          </div>
+          {/* Floating sparkles */}
+          <motion.div
+            animate={{ y: [-5, 5, -5], rotate: [0, 10, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="absolute -top-2 -right-2"
+          >
+            <Sparkles className="w-6 h-6 text-yellow-400" />
+          </motion.div>
         </motion.div>
-        <h1 className="text-3xl font-bold mb-2">게임센터</h1>
-        <p className="text-slate-600 dark:text-slate-400">
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-4xl font-extrabold mb-3 text-white tracking-tight"
+        >
+          게임<span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">센터</span>
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="text-slate-400 font-medium text-lg"
+        >
           재미있게 놀면서 코딩 실력을 키워요!
-        </p>
+        </motion.p>
       </div>
 
-      {/* Games Grid */}
-      <div className="grid md:grid-cols-2 gap-6 mb-8">
+      {/* Games Grid with 3D cards */}
+      <div className="grid md:grid-cols-2 gap-8 mb-8">
         {games.map((game, index) => (
           <motion.div
             key={game.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+            initial={{ opacity: 0, y: 30, rotateX: 20 }}
+            animate={{ opacity: 1, y: 0, rotateX: 0 }}
+            transition={{ delay: index * 0.1, type: 'spring', stiffness: 200 }}
           >
-            <Card
-              hoverable
+            <motion.div
+              whileHover={{
+                scale: 1.03,
+                rotateY: 5,
+                z: 50,
+              }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setSelectedGame(game.id)}
-              className="overflow-hidden"
-              padding="none"
+              className="relative overflow-hidden rounded-3xl cursor-pointer group"
+              style={{ perspective: '1000px' }}
             >
-              <div className={`h-24 bg-gradient-to-r ${game.color} flex items-center justify-center text-white`}>
-                {game.icon}
+              {/* Background glow */}
+              <div className={`absolute inset-0 ${game.bgGlow} blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+
+              {/* Card content */}
+              <div className="relative bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-3xl overflow-hidden shadow-2xl group-hover:border-slate-600/50 transition-all duration-300">
+                {/* Top gradient section */}
+                <div className={`relative h-32 bg-gradient-to-r ${game.color} flex items-center justify-center overflow-hidden`}>
+                  {/* Animated background pattern */}
+                  <div className="absolute inset-0 opacity-20">
+                    <div className="absolute w-32 h-32 bg-white/20 rounded-full -top-16 -left-16 animate-pulse" />
+                    <div className="absolute w-24 h-24 bg-white/20 rounded-full -bottom-12 -right-12 animate-pulse" style={{ animationDelay: '0.5s' }} />
+                  </div>
+
+                  {/* Icon with 3D effect */}
+                  <motion.div
+                    whileHover={{ scale: 1.2, rotate: 5 }}
+                    className="relative z-10 text-white drop-shadow-2xl"
+                  >
+                    {game.icon}
+                  </motion.div>
+
+                  {/* Emoji floating */}
+                  <motion.span
+                    animate={{
+                      y: [-8, 8, -8],
+                      rotate: [-10, 10, -10],
+                    }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                    className="absolute top-4 right-4 text-3xl"
+                  >
+                    {game.emoji}
+                  </motion.span>
+
+                  {/* Shine overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-white/20 pointer-events-none" />
+                </div>
+
+                {/* Card body */}
+                <div className="p-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-xl font-bold text-white">{game.name}</h3>
+                    <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                  </div>
+                  <p className="text-slate-400 mb-5">{game.description}</p>
+                  <Button
+                    variant="game"
+                    size="lg"
+                    className="w-full"
+                    leftIcon={<Play className="w-5 h-5" />}
+                  >
+                    플레이하기
+                  </Button>
+                </div>
               </div>
-              <div className="p-4">
-                <h3 className="text-lg font-bold mb-1">{game.name}</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">{game.description}</p>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  className="mt-3"
-                  leftIcon={<Play className="w-4 h-4" />}
-                >
-                  플레이
-                </Button>
-              </div>
-            </Card>
+            </motion.div>
           </motion.div>
         ))}
       </div>

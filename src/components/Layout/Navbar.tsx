@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Menu,
   Bell,
@@ -10,20 +10,32 @@ import {
   Zap,
   ChevronLeft,
   ChevronRight,
+  LogIn,
+  LogOut,
+  LayoutDashboard,
+  Shield,
 } from 'lucide-react';
 import { useUserStore } from '../../stores/userStore';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { useAuthStore } from '../../stores/authStore';
 
 interface NavbarProps {
   onMenuClick: () => void;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
+  const navigate = useNavigate();
   const { user } = useUserStore();
   const { theme, setTheme, sidebarCollapsed, toggleSidebar, getEffectiveTheme } =
     useSettingsStore();
+  const { authUser, isAuthenticated, logout } = useAuthStore();
   const effectiveTheme = getEffectiveTheme();
   const expProgress = useUserStore((state) => state.getExpProgress());
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
 
   const toggleTheme = () => {
     setTheme(effectiveTheme === 'dark' ? 'light' : 'dark');
@@ -119,12 +131,52 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
             <Settings className="w-5 h-5" />
           </Link>
 
-          {/* User Avatar */}
-          {user && (
-            <Link to="/profile" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-secondary-400 rounded-full flex items-center justify-center text-lg">
-                {user.avatar}
-              </div>
+          {/* Auth Buttons */}
+          {isAuthenticated && authUser ? (
+            <>
+              {/* Dashboard Link */}
+              {authUser.role === 'teacher' && (
+                <Link
+                  to="/teacher"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/40 transition-colors"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span className="text-sm font-medium">대시보드</span>
+                </Link>
+              )}
+              {authUser.role === 'admin' && (
+                <Link
+                  to="/admin"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-800/40 transition-colors"
+                >
+                  <Shield className="w-4 h-4" />
+                  <span className="text-sm font-medium">관리자</span>
+                </Link>
+              )}
+
+              {/* Logout Button */}
+              <button
+                onClick={handleLogout}
+                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-surfaceHover text-slate-600 dark:text-slate-400"
+                title="로그아웃"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+
+              {/* User Avatar */}
+              <Link to="/profile" className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-secondary-400 rounded-full flex items-center justify-center text-lg">
+                  {user?.avatar || authUser.displayName.charAt(0)}
+                </div>
+              </Link>
+            </>
+          ) : (
+            <Link
+              to="/login"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors"
+            >
+              <LogIn className="w-4 h-4" />
+              <span className="text-sm font-medium">로그인</span>
             </Link>
           )}
         </div>

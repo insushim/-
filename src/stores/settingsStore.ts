@@ -1,6 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+// 환경변수에서 API 키 가져오기 (안전하게)
+const getEnvApiKey = (): string | null => {
+  try {
+    return import.meta.env.VITE_GEMINI_API_KEY || null;
+  } catch {
+    return null;
+  }
+};
+
 interface SettingsState {
   theme: 'light' | 'dark' | 'system';
   fontSize: 'small' | 'medium' | 'large';
@@ -22,6 +31,7 @@ interface SettingsState {
   setEditorTheme: (theme: 'vs-dark' | 'light') => void;
   setGeminiApiKey: (key: string) => void;
   getEffectiveTheme: () => 'light' | 'dark';
+  initializeApiKey: () => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -34,7 +44,7 @@ export const useSettingsStore = create<SettingsState>()(
       notificationsEnabled: true,
       sidebarCollapsed: false,
       editorTheme: 'vs-dark',
-      geminiApiKey: null,
+      geminiApiKey: getEnvApiKey(),
 
       setTheme: (theme) => {
         set({ theme });
@@ -71,6 +81,15 @@ export const useSettingsStore = create<SettingsState>()(
 
       setGeminiApiKey: (key) => {
         set({ geminiApiKey: key });
+      },
+
+      initializeApiKey: () => {
+        const currentKey = get().geminiApiKey;
+        const envKey = getEnvApiKey();
+        // 환경변수에 키가 있고, 현재 설정된 키가 없으면 환경변수 키 사용
+        if (envKey && !currentKey) {
+          set({ geminiApiKey: envKey });
+        }
       },
 
       getEffectiveTheme: () => {

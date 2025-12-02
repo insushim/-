@@ -2,19 +2,80 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  BookOpen, Flame, Trophy, Zap, Target, ChevronRight,
-  Calendar, Clock, Star, Sparkles, TrendingUp, Award
+  Clock,
+  Trophy,
+  Flame,
+  Target,
+  Zap,
+  PlayCircle,
+  Sparkles,
+  Code2,
+  BookOpen,
+  ChevronRight,
+  Star,
+  TrendingUp,
 } from 'lucide-react';
-import { Card, Button, ProgressRing, ConfettiEffect } from '../components/Common';
+import { ConfettiEffect } from '../components/Common';
 import { useUserStore } from '../stores/userStore';
 import { useProgressStore } from '../stores/progressStore';
 import { allUnits } from '../data/curriculum';
 
+// Stat Card Component
+const StatCard = ({
+  title,
+  current,
+  max,
+  unit,
+  icon: Icon,
+  colorTheme
+}: {
+  title: string;
+  current: number;
+  max: number;
+  unit: string;
+  icon: React.ElementType;
+  colorTheme: 'green' | 'blue' | 'violet' | 'cyan';
+}) => {
+  const percentage = Math.min((current / max) * 100, 100);
+
+  const themes = {
+    green: { bg: 'from-emerald-500 to-teal-500', icon: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+    blue: { bg: 'from-blue-500 to-indigo-500', icon: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+    violet: { bg: 'from-violet-500 to-purple-500', icon: 'bg-violet-500/20 text-violet-400 border-violet-500/30' },
+    cyan: { bg: 'from-cyan-500 to-blue-500', icon: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' },
+  };
+
+  const theme = themes[colorTheme];
+
+  return (
+    <div className="bg-slate-700/40 p-6 rounded-2xl border border-slate-600/50 hover:bg-slate-700/60 hover:border-slate-500 transition-all duration-300 group">
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2">{title}</p>
+          <div className="flex items-baseline gap-1">
+            <span className="text-4xl font-extrabold text-white tracking-tight">{current}</span>
+            <span className="text-slate-400 font-bold">/ {max}{unit}</span>
+          </div>
+        </div>
+        <div className={`p-3 rounded-xl border ${theme.icon}`}>
+          <Icon size={24} />
+        </div>
+      </div>
+
+      <div className="relative w-full h-2 bg-slate-600/50 rounded-full overflow-hidden">
+        <div
+          className={`h-full bg-gradient-to-r ${theme.bg} transition-all duration-700 ease-out rounded-full`}
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+    </div>
+  );
+};
+
 const Home: React.FC = () => {
   const navigate = useNavigate();
   const { user, isInitialized, initUser, updateStreak } = useUserStore();
-  const { progress, activities, dailyChallenge, checkDailyReset } = useProgressStore();
-  const expProgress = useUserStore((state) => state.getExpProgress());
+  const { progress, checkDailyReset } = useProgressStore();
 
   const [showWelcome, setShowWelcome] = useState(false);
   const [name, setName] = useState('');
@@ -29,17 +90,17 @@ const Home: React.FC = () => {
   // 새 사용자 환영 모달
   if (!isInitialized || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-[80vh] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="card p-8 max-w-md w-full text-center"
+          className="bg-slate-700 p-8 rounded-2xl border border-slate-600 shadow-2xl max-w-md w-full text-center"
         >
-          <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-2xl flex items-center justify-center text-4xl">
+          <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-indigo-500 via-purple-500 to-teal-400 rounded-2xl flex items-center justify-center text-4xl shadow-lg">
             🚀
           </div>
-          <h1 className="text-2xl font-bold mb-2">CodeQuest에 오신 것을 환영해요!</h1>
-          <p className="text-slate-600 dark:text-slate-400 mb-6">
+          <h1 className="text-2xl font-bold mb-2 text-white">코딩마루에 오신 것을 환영해요!</h1>
+          <p className="text-slate-400 mb-6">
             1년 완성 코딩 학습 여정을 시작해볼까요?
           </p>
 
@@ -48,13 +109,11 @@ const Home: React.FC = () => {
             placeholder="이름을 입력하세요"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="input mb-4"
+            className="w-full px-4 py-3 rounded-xl border border-slate-600 bg-slate-800 text-white mb-4 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 placeholder-slate-500"
             autoFocus
           />
 
-          <Button
-            variant="primary"
-            className="w-full"
+          <button
             onClick={() => {
               if (name.trim()) {
                 initUser(name.trim());
@@ -62,289 +121,217 @@ const Home: React.FC = () => {
               }
             }}
             disabled={!name.trim()}
+            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/25"
           >
             시작하기
-          </Button>
+          </button>
         </motion.div>
       </div>
     );
   }
 
   const completedMissions = progress.completedMissions.length;
-  const totalMissions = allUnits.reduce(
-    (sum, unit) => sum + unit.weeks.reduce((wSum, w) => wSum + w.missions.length, 0),
-    0
-  );
-  const overallProgress = Math.round((completedMissions / totalMissions) * 100);
+  const todayGoal = Math.min(completedMissions, 3);
+
+  // Get current/recent unit for the mission card
+  const currentUnit = allUnits[0];
+  const currentWeek = currentUnit?.weeks?.[0];
+  const currentMission = currentWeek?.missions?.[0];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="space-y-8 animate-fade-in-up">
       <ConfettiEffect trigger={showWelcome} type="fireworks" />
 
-      {/* Welcome Header */}
+      {/* Top Header Section */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+        className="flex flex-col md:flex-row md:items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">
-            안녕, <span className="gradient-text">{user.name}</span>! 👋
+          <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight mb-2">
+            안녕하세요, {user.name}님! 👋
           </h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-1">
-            오늘도 코딩 실력을 키워볼까요?
-          </p>
+          <p className="text-slate-400 font-medium">오늘도 성장의 깊이를 더해보세요.</p>
         </div>
 
-        <div className="flex items-center gap-4">
-          {/* Streak */}
-          <div className="flex items-center gap-2 px-4 py-2 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
-            <Flame className="w-5 h-5 text-orange-500" />
-            <div>
-              <p className="text-xs text-orange-600 dark:text-orange-400">연속 학습</p>
-              <p className="font-bold text-orange-700 dark:text-orange-300">{user.streak}일</p>
+        {/* Status Indicators */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-slate-700/50 px-4 py-2.5 rounded-xl border border-slate-600 hover:border-orange-500/50 transition-colors group cursor-pointer">
+            <div className="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center border border-orange-500/30">
+              <span className="text-sm">🔥</span>
             </div>
+            <span className="font-bold text-slate-200 group-hover:text-orange-400 transition-colors">{user.streak}일째 연속</span>
           </div>
 
-          {/* Level */}
-          <div className="flex items-center gap-2 px-4 py-2 bg-primary-100 dark:bg-primary-900/30 rounded-xl">
-            <Zap className="w-5 h-5 text-primary-500" />
-            <div>
-              <p className="text-xs text-primary-600 dark:text-primary-400">레벨</p>
-              <p className="font-bold text-primary-700 dark:text-primary-300">Lv.{user.level}</p>
+          <div className="flex items-center gap-2 bg-gradient-to-r from-yellow-600/20 to-amber-600/20 px-4 py-2.5 rounded-xl border border-yellow-500/30 cursor-pointer hover:border-yellow-500/50 transition-colors">
+            <Zap className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+            <span className="font-bold text-yellow-400">{user.totalExp.toLocaleString()} XP</span>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Stats Grid */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+      >
+        <StatCard
+          title="Today's Goal"
+          current={todayGoal}
+          max={3}
+          unit=""
+          icon={Target}
+          colorTheme="green"
+        />
+        <StatCard
+          title="현재 레벨"
+          current={user.level}
+          max={100}
+          unit=" Lv"
+          icon={TrendingUp}
+          colorTheme="violet"
+        />
+      </motion.div>
+
+      {/* Current Mission Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-xl font-bold flex items-center gap-2 text-white">
+            <span className="w-1.5 h-6 bg-indigo-500 rounded-full"></span>
+            진행 중인 미션
+          </h2>
+          <Link
+            to="/learn"
+            className="text-sm font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
+          >
+            전체 보기 <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        {/* Mission Card */}
+        <div className="relative overflow-hidden rounded-[2rem] bg-slate-700 border border-slate-600 shadow-2xl group isolate">
+          {/* Background Decor */}
+          <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-indigo-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 group-hover:bg-indigo-500/15 transition-all duration-1000 -z-10"></div>
+
+          <div className="flex flex-col md:flex-row">
+            {/* Content Area */}
+            <div className="flex-1 p-8">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[11px] font-bold uppercase tracking-wider">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                  </span>
+                  {currentUnit?.title || 'Basic Algorithm'}
+                </span>
+                <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">
+                  Week {currentWeek?.number || 1}
+                </span>
+              </div>
+
+              <h3 className="text-2xl md:text-3xl font-extrabold mb-3 text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-indigo-400 group-hover:to-cyan-400 transition-all">
+                {currentMission?.title || '아침 루틴 알고리즘 설계'}
+              </h3>
+              <p className="text-slate-400 font-medium mb-6 leading-relaxed max-w-2xl">
+                {currentMission?.description || '일상적인 행동을 순서도로 구조화하여 알고리즘적 사고를 기르는 훈련입니다. 드래그 앤 드롭을 사용하여 최적의 루틴을 완성하세요.'}
+              </p>
+
+              <div className="flex flex-wrap gap-3 text-sm font-bold">
+                <div className="flex items-center bg-slate-600/50 px-3 py-1.5 rounded-lg border border-slate-500/30 text-slate-300">
+                  <Clock size={16} className="mr-2 text-slate-400" />
+                  {currentMission?.estimatedMinutes || 10}분 소요
+                </div>
+                <div className="flex items-center bg-yellow-500/10 px-3 py-1.5 rounded-lg border border-yellow-500/20 text-yellow-400">
+                  <Trophy size={16} className="mr-2" />
+                  +{currentMission?.exp || 50} XP 보상
+                </div>
+                {currentMission?.difficulty && (
+                  <span className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
+                    currentMission.difficulty === 'beginner' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20' :
+                    currentMission.difficulty === 'intermediate' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/20' :
+                    'bg-red-500/20 text-red-400 border border-red-500/20'
+                  }`}>
+                    {currentMission.difficulty === 'beginner' ? '초급' :
+                     currentMission.difficulty === 'intermediate' ? '중급' : '고급'}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Action Area */}
+            <div className="bg-slate-800/50 border-t md:border-t-0 md:border-l border-slate-600/50 p-8 flex flex-col justify-center items-center w-full md:w-72 gap-3">
+              <div className="w-24 h-24 bg-gradient-to-br from-slate-600/50 to-slate-700/50 backdrop-blur-md rounded-2xl flex items-center justify-center border border-slate-500/50 shadow-xl mb-4">
+                <span className="text-5xl">{currentUnit?.icon || '🧠'}</span>
+              </div>
+
+              <button
+                onClick={() => currentMission ? navigate(`/mission/${currentMission.id}`) : navigate('/learn')}
+                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all flex items-center justify-center gap-2"
+              >
+                <span>시작하기</span>
+                <Sparkles size={18} className="text-cyan-300" />
+              </button>
+              <button
+                onClick={() => navigate('/learn')}
+                className="w-full bg-slate-700/50 text-slate-400 border border-slate-600 font-bold py-3 rounded-xl hover:bg-slate-700 hover:text-slate-200 text-sm transition-colors"
+              >
+                다른 미션 선택
+              </button>
             </div>
           </div>
         </div>
       </motion.div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">완료한 미션</p>
-                <p className="text-2xl font-bold">{completedMissions}</p>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
-                <Target className="w-6 h-6 text-green-600 dark:text-green-400" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">전체 진행률</p>
-                <p className="text-2xl font-bold">{overallProgress}%</p>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
-                <Trophy className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">획득한 뱃지</p>
-                <p className="text-2xl font-bold">{progress.earnedBadges.length}</p>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center">
-                <Star className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">총 경험치</p>
-                <p className="text-2xl font-bold">{user.totalExp.toLocaleString()}</p>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content - Left */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Continue Learning */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">계속 학습하기</h2>
-              <Link to="/learn" className="text-sm text-primary-600 hover:text-primary-700 flex items-center gap-1">
-                전체 보기 <ChevronRight className="w-4 h-4" />
-              </Link>
-            </div>
-
-            <div className="grid gap-4">
-              {allUnits.slice(0, 3).map((unit, index) => {
-                const unitProgress = progress.unitsProgress[unit.id];
-                const progressPercent = unitProgress
-                  ? Math.round((unitProgress.missionsCompleted / unit.totalMissions) * 100)
-                  : 0;
-
-                return (
-                  <motion.div
-                    key={unit.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    onClick={() => navigate(`/learn/${unit.id}`)}
-                    className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-dark-surfaceHover rounded-xl cursor-pointer hover:shadow-md transition-all"
-                  >
-                    <div
-                      className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl"
-                      style={{ backgroundColor: `${unit.color}20` }}
-                    >
-                      {unit.icon}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium">{unit.title}</h3>
-                      <p className="text-sm text-slate-500">{unit.description}</p>
-                      <div className="mt-2 progress-bar">
-                        <div className="progress-bar-fill" style={{ width: `${progressPercent}%` }} />
-                      </div>
-                    </div>
-                    <span className="text-sm font-medium text-slate-600">{progressPercent}%</span>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </Card>
-
-          {/* Quick Actions */}
-          <div className="grid grid-cols-2 gap-4">
-            <Card
-              hoverable
-              onClick={() => navigate('/vibe-coding')}
-              className="p-6 bg-gradient-to-br from-primary-500/10 to-secondary-500/10"
+      {/* Recommended Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <h2 className="text-xl font-bold mb-6 text-white flex items-center gap-2">
+          <span className="w-1.5 h-6 bg-cyan-500 rounded-full"></span>
+          {user.name}님을 위한 추천 코스
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-6">
+          {allUnits.slice(0, 3).map((unit, i) => (
+            <div
+              key={unit.id}
+              onClick={() => navigate(`/learn/${unit.id}`)}
+              className="group bg-slate-700/40 p-5 rounded-2xl border border-slate-600/50 hover:bg-slate-700/60 hover:border-slate-500 hover:translate-x-1 transition-all duration-300 cursor-pointer"
             >
-              <Sparkles className="w-8 h-8 text-primary-500 mb-3" />
-              <h3 className="font-semibold mb-1">바이브코딩</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                AI와 함께 코드를 만들어보세요
-              </p>
-            </Card>
-
-            <Card
-              hoverable
-              onClick={() => navigate('/games')}
-              className="p-6 bg-gradient-to-br from-green-500/10 to-emerald-500/10"
-            >
-              <TrendingUp className="w-8 h-8 text-green-500 mb-3" />
-              <h3 className="font-semibold mb-1">게임센터</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                재미있게 코딩 실력을 키워요
-              </p>
-            </Card>
-          </div>
-        </div>
-
-        {/* Sidebar - Right */}
-        <div className="space-y-6">
-          {/* Level Progress */}
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-4">레벨 진행도</h2>
-            <div className="flex items-center gap-4">
-              <ProgressRing progress={expProgress.percentage} size={100}>
-                <div className="text-center">
-                  <p className="text-2xl font-bold">{user.level}</p>
-                  <p className="text-xs text-slate-500">레벨</p>
-                </div>
-              </ProgressRing>
-              <div>
-                <p className="font-medium text-lg">{user.title}</p>
-                <p className="text-sm text-slate-500 mt-1">
-                  다음 레벨까지 {expProgress.next - expProgress.current} XP
-                </p>
-                <div className="mt-2 progress-bar w-24">
-                  <div className="progress-bar-fill" style={{ width: `${expProgress.percentage}%` }} />
-                </div>
+              <div className="h-32 bg-gradient-to-br from-slate-600/50 to-slate-700/50 rounded-xl border border-slate-500/30 mb-5 flex items-center justify-center relative overflow-hidden group-hover:border-indigo-500/30 transition-colors">
+                <span className="font-extrabold text-slate-600/30 text-8xl absolute -bottom-4 -right-4 group-hover:text-indigo-500/20 transition-colors">{unit.number}</span>
+                <span className="text-5xl relative z-10">{unit.icon}</span>
               </div>
-            </div>
-          </Card>
-
-          {/* Daily Challenge */}
-          {dailyChallenge && (
-            <Card className="p-6 bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20">
-              <div className="flex items-center gap-2 mb-3">
-                <Calendar className="w-5 h-5 text-orange-500" />
-                <h2 className="font-semibold">오늘의 챌린지</h2>
-              </div>
-              <p className="text-sm text-slate-700 dark:text-slate-300 mb-3">
-                {dailyChallenge.task}
-              </p>
-              <div className="flex items-center justify-between">
-                <div className="progress-bar flex-1 mr-3">
-                  <div
-                    className="progress-bar-fill"
-                    style={{ width: `${(dailyChallenge.progress / dailyChallenge.target) * 100}%` }}
-                  />
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Unit {unit.number}</span>
+                  <h4 className="font-bold text-lg text-white group-hover:text-indigo-400 transition-colors">{unit.title}</h4>
                 </div>
-                <span className="text-sm font-medium">
-                  {dailyChallenge.progress}/{dailyChallenge.target}
+                <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-indigo-400 transition-colors" />
+              </div>
+              <p className="text-sm font-medium text-slate-500 mb-4 line-clamp-2">{unit.description}</p>
+              <div className="flex items-center gap-3 text-xs text-slate-500">
+                <span className="flex items-center gap-1">
+                  <BookOpen className="w-3.5 h-3.5" />
+                  {unit.totalMissions}개 미션
+                </span>
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5" />
+                  약 {unit.estimatedHours}시간
                 </span>
               </div>
-              <p className="text-xs text-orange-600 dark:text-orange-400 mt-2 flex items-center gap-1">
-                <Award className="w-3 h-3" /> +{dailyChallenge.reward} XP
-              </p>
-            </Card>
-          )}
-
-          {/* Recent Activity */}
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-4">최근 활동</h2>
-            <div className="space-y-3">
-              {activities.length > 0 ? (
-                activities.slice(0, 5).map((activity) => (
-                  <div key={activity.id} className="flex items-start gap-3">
-                    <span className="text-xl">{activity.icon || '📝'}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{activity.title}</p>
-                      <p className="text-xs text-slate-500">{activity.description}</p>
-                    </div>
-                    {activity.exp && (
-                      <span className="text-xs text-primary-600 font-medium">+{activity.exp} XP</span>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-slate-500 text-center py-4">
-                  아직 활동이 없어요. 첫 미션을 시작해보세요!
-                </p>
-              )}
             </div>
-          </Card>
+          ))}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
